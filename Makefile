@@ -1,13 +1,16 @@
-.PHONY: build run test fmt db-up db-down db-down migrate-up migrate-down migrate-create
+.PHONY: build run test fmt db-up db-down db-psql migrate-down migrate-create
+
+-include .env
+export
 
 MIGRATIONS_DIR := migrations
-DATABASE_URL ?= postgres://postgres_user:postgres_password@localhost:5437/books?sslmode=disable
+DATABASE_URL ?= postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)
 
 build:
 	go build -o ./.bin/api ./cmd/api
 
 run: build
-	set -a && . ./.env && set +a && ./.bin/api
+	./.bin/api
 
 test:
 	go test ./... -v
@@ -17,16 +20,13 @@ fmt:
 	goimports -w .
 
 db-up:
-	docker-compose up -d
+	docker compose up -d
 
 db-down:
-	docker-compose down
+	docker compose down
 
 db-psql:
-	docker-compose exec postgres psql -U postgres -d books
-
-migrate-up:
-	migrate -path $(MIGRATIONS_DIR) -database "$(DATABASE_URL)" up
+	docker compose exec postgres psql -U $(DB_USER) -d $(DB_NAME)
 
 migrate-down:
 	migrate -path $(MIGRATIONS_DIR) -database "$(DATABASE_URL)" down 1

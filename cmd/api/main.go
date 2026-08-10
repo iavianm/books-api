@@ -3,14 +3,24 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
+
+	"github.com/iavianm/books-api/internal/config"
+	"github.com/iavianm/books-api/internal/database"
 )
 
 func main() {
-	port := os.Getenv("HTTP_PORT")
-	if port == "" {
-		port = "8080"
+	conf := config.LoadConfig()
+
+	db, err := database.Connect("pgx", conf.DB.DSN())
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer func() { _ = db.Close() }()
+
+	if err := database.RunMigrations(db, conf.DB.Name); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("migrations applied")
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -18,6 +28,6 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
-	log.Printf("Starting server on port %s", port)
-	log.Fatal(http.ListenAndServe(":"+port, mux))
+	log.Printf("Starting server on port %s", conf.HTTPPort)
+	log.Fatal(http.ListenAndServe(":"+conf.HTTPPort, mux))
 }
