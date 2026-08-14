@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"os"
 )
 
@@ -32,7 +31,7 @@ func LoadConfig() *Config {
 func mustEnv(key string) string {
 	v := os.Getenv(key)
 	if v == "" {
-		log.Fatalf("%s environment variable not set", key)
+		panic(fmt.Sprintf("%s environment variable not set", key))
 	}
 	return v
 }
