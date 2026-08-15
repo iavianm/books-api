@@ -1,4 +1,4 @@
-.PHONY: build run test fmt db-up db-down db-psql migrate-down migrate-create
+.PHONY: build run test fmt up down logs db-up db-down db-psql migrate-down migrate-create
 
 -include .env
 export
@@ -19,8 +19,17 @@ fmt:
 	gofmt -w .
 	goimports -w .
 
+up:
+	docker compose up -d --build
+
+down:
+	docker compose down
+
+logs:
+	docker compose logs -f app
+
 db-up:
-	docker compose up -d
+	docker compose up -d postgres
 
 db-down:
 	docker compose down
