@@ -8,8 +8,7 @@ import (
 
 func TestRecovererTurnsPanicInto500(t *testing.T) {
 	h := Recoverer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var m map[string]string
-		m["boom"] = "x"
+		panic("something went wrong")
 	}))
 
 	rec := httptest.NewRecorder()

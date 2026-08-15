@@ -1,4 +1,4 @@
-.PHONY: build run test test-integration cover fmt up down logs db-up db-down db-psql migrate-down migrate-create
+.PHONY: build run test test-integration cover fmt lint lint-fix up down logs db-up db-down db-psql migrate-down migrate-create
 
 -include .env
 export
@@ -26,6 +26,12 @@ cover:
 fmt:
 	gofmt -w .
 	goimports -w .
+
+lint:
+	golangci-lint run ./...
+
+lint-fix:
+	golangci-lint run --fix ./...
 
 up:
 	docker compose up -d --build
