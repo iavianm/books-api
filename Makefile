@@ -1,4 +1,4 @@
-.PHONY: build run test fmt up down logs db-up db-down db-psql migrate-down migrate-create
+.PHONY: build run test test-integration cover fmt up down logs db-up db-down db-psql migrate-down migrate-create
 
 -include .env
 export
@@ -14,6 +14,14 @@ run: build
 
 test:
 	go test ./... -v
+
+test-integration:
+	TEST_DATABASE_DSN="host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=$(DB_SSLMODE)" \
+		go test -tags=integration ./internal/repository/ -v
+
+cover:
+	go test ./... -coverprofile=coverage.out
+	go tool cover -func=coverage.out | tail -1
 
 fmt:
 	gofmt -w .
