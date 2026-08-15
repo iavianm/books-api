@@ -6,6 +6,9 @@ import (
 
 	"github.com/iavianm/books-api/internal/config"
 	"github.com/iavianm/books-api/internal/database"
+	"github.com/iavianm/books-api/internal/handler"
+	"github.com/iavianm/books-api/internal/repository"
+	"github.com/iavianm/books-api/internal/service"
 )
 
 func main() {
@@ -22,11 +25,11 @@ func main() {
 	}
 	log.Println("migrations applied")
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	})
+	repo := repository.NewBookRepository(db)
+	srv := service.NewBookService(repo)
+	h := handler.NewHandler(srv)
+
+	mux := h.Routes()
 
 	log.Printf("Starting server on port %s", conf.HTTPPort)
 	log.Fatal(http.ListenAndServe(":"+conf.HTTPPort, mux))
