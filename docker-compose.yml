@@ -31,6 +31,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
       DB_SSLMODE: ${DB_SSLMODE}
+      CACHE_TTL: ${CACHE_TTL}
     depends_on:
       postgres:
         condition: service_healthy

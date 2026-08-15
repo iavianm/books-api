@@ -3,10 +3,12 @@ package config
 import (
 	"fmt"
 	"os"
+	"time"
 )
 
 type Config struct {
 	HTTPPort string
+	CacheTTL time.Duration
 	DB       DBConfig
 }
 
@@ -17,6 +19,7 @@ type DBConfig struct {
 func LoadConfig() *Config {
 	return &Config{
 		HTTPPort: mustEnv("HTTP_PORT"),
+		CacheTTL: mustDuration("CACHE_TTL"),
 		DB: DBConfig{
 			Host:     mustEnv("DB_HOST"),
 			Port:     mustEnv("DB_PORT"),
@@ -34,6 +37,17 @@ func mustEnv(key string) string {
 		panic(fmt.Sprintf("%s environment variable not set", key))
 	}
 	return v
+}
+
+func mustDuration(key string) time.Duration {
+	d, err := time.ParseDuration(mustEnv(key))
+	if err != nil {
+		panic(fmt.Sprintf("%s must be a duration like 30s: %v", key, err))
+	}
+	if d <= 0 {
+		panic(fmt.Sprintf("%s must be positive", key))
+	}
+	return d
 }
 
 func (c DBConfig) DSN() string {

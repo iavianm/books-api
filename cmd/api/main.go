@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/iavianm/books-api/internal/cache"
 	"github.com/iavianm/books-api/internal/config"
 	"github.com/iavianm/books-api/internal/database"
 	"github.com/iavianm/books-api/internal/handler"
@@ -43,7 +44,11 @@ func run() error {
 	slog.Info("migrations applied")
 
 	repo := repository.NewBookRepository(db)
-	srv := service.NewBookService(repo)
+
+	cachedRepo := cache.NewBookRepository(repo, conf.CacheTTL, time.Minute)
+	defer cachedRepo.Close()
+
+	srv := service.NewBookService(cachedRepo)
 	h := handler.NewHandler(srv)
 
 	serv := &http.Server{

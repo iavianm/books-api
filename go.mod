@@ -4,6 +4,7 @@ go 1.26.4
 
 require (
 	github.com/golang-migrate/migrate/v4 v4.19.1
+	github.com/iavianm/memory_cache_wrpool v0.0.0-20260801133934-ff320c964489
 	github.com/jackc/pgx/v5 v5.10.0
 )
 
