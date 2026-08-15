@@ -1,9 +1,14 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/iavianm/books-api/internal/config"
 	"github.com/iavianm/books-api/internal/database"
@@ -40,8 +45,33 @@ func main() {
 
 	slog.Info("starting server", "port", conf.HTTPPort)
 
-	if err := http.ListenAndServe(":"+conf.HTTPPort, mux); err != nil {
-		slog.Error("http server", "err", err)
-		os.Exit(1)
+	serv := &http.Server{
+		Addr:              ":" + conf.HTTPPort,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
+
+	go func() {
+		if err := serv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("http server", "err", err)
+			os.Exit(1)
+		}
+	}()
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	<-ctx.Done()
+	slog.Info("shutting down")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := serv.Shutdown(shutdownCtx); err != nil {
+		slog.Error("forced shutdown", "err", err)
+	}
+	slog.Info("server stopped")
 }
