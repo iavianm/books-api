@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -62,7 +63,7 @@ func handleServiceError(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, repository.ErrBookNotFound):
 		NotFound(w, r)
 	default:
-		log.Printf("internal error: %v", err)
+		slog.Error("internal error", "err", err, "path", r.URL.Path)
 		ServerError(w, r)
 	}
 }

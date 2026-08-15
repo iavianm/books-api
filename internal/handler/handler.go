@@ -34,7 +34,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("PUT /books/{id}", h.updateBook)
 	mux.HandleFunc("DELETE /books/{id}", h.deleteBook)
 	mux.HandleFunc("GET /health", h.health)
-	return mux
+	return Recoverer(Logging(mux))
 }
 
 func (h *Handler) health(w http.ResponseWriter, r *http.Request) {

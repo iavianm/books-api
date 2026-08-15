@@ -1,8 +1,9 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/iavianm/books-api/internal/config"
 	"github.com/iavianm/books-api/internal/database"
@@ -12,18 +13,24 @@ import (
 )
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	slog.SetDefault(logger)
+
 	conf := config.LoadConfig()
 
 	db, err := database.Connect("pgx", conf.DB.DSN())
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("connect to database", "err", err)
+		os.Exit(1)
 	}
+
 	defer func() { _ = db.Close() }()
 
 	if err := database.RunMigrations(db, conf.DB.Name); err != nil {
-		log.Fatal(err)
+		slog.Error("run migrations", "err", err)
+		os.Exit(1)
 	}
-	log.Println("migrations applied")
+	slog.Info("migrations applied")
 
 	repo := repository.NewBookRepository(db)
 	srv := service.NewBookService(repo)
@@ -31,6 +38,10 @@ func main() {
 
 	mux := h.Routes()
 
-	log.Printf("Starting server on port %s", conf.HTTPPort)
-	log.Fatal(http.ListenAndServe(":"+conf.HTTPPort, mux))
+	slog.Info("starting server", "port", conf.HTTPPort)
+
+	if err := http.ListenAndServe(":"+conf.HTTPPort, mux); err != nil {
+		slog.Error("http server", "err", err)
+		os.Exit(1)
+	}
 }
