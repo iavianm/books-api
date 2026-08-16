@@ -1,0 +1,253 @@
+openapi: 3.1.0
+
+info:
+  title: books-api
+  version: 1.0.0
+  description: |
+    CRUD REST API for a book catalogue.
+
+    Written in Go on top of the standard library: `net/http.ServeMux` for routing,
+    `database/sql` with the pgx driver for PostgreSQL, in-memory caching with TTL.
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: books
+    description: Book catalogue
+  - name: system
+    description: Service endpoints
+
+paths:
+  /health:
+    get:
+      tags: [system]
+      summary: Health check
+      operationId: health
+      responses:
+        "200":
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    examples: [ok]
+
+  /books:
+    get:
+      tags: [books]
+      summary: List all books
+      operationId: listBooks
+      responses:
+        "200":
+          description: List of books, ordered by id
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Book"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [books]
+      summary: Create a book
+      operationId: createBook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookRequest"
+      responses:
+        "201":
+          description: Book created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /books/{id}:
+    parameters:
+      - $ref: "#/components/parameters/BookID"
+
+    get:
+      tags: [books]
+      summary: Get a book by id
+      operationId: getBook
+      responses:
+        "200":
+          description: Book found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags: [books]
+      summary: Update a book by id
+      operationId: updateBook
+      description: Replaces all editable fields of the book.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookRequest"
+      responses:
+        "200":
+          description: Book updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [books]
+      summary: Delete a book by id
+      operationId: deleteBook
+      responses:
+        "204":
+          description: Book deleted, no content returned
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  parameters:
+    BookID:
+      name: id
+      in: path
+      required: true
+      description: Book identifier, must be a positive integer
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+      example: 1
+
+  schemas:
+    Book:
+      type: object
+      required: [id, title, author, year, genre, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 1
+        title:
+          type: string
+          example: War and Peace
+        author:
+          type: string
+          example: Leo Tolstoy
+        year:
+          type: integer
+          example: 1869
+        genre:
+          type: string
+          example: novel
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2026-08-16T01:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2026-08-16T01:00:00Z"
+
+    BookRequest:
+      type: object
+      required: [title, author, genre, year]
+      description: |
+        Payload for creating and updating a book.
+
+        `title`, `author` and `genre` must be non-blank; surrounding whitespace
+        is trimmed before saving. `year` must be between 1450 and next year.
+      properties:
+        title:
+          type: string
+          minLength: 1
+          example: War and Peace
+        author:
+          type: string
+          minLength: 1
+          example: Leo Tolstoy
+        genre:
+          type: string
+          minLength: 1
+          example: novel
+        year:
+          type: integer
+          minimum: 1450
+          example: 1869
+
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          example: "validation failed: title is required"
+
+  responses:
+    BadRequest:
+      description: Malformed JSON, invalid id, or failed validation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            validation:
+              value:
+                message: "validation failed: title is required"
+            invalidID:
+              value:
+                message: bad request
+
+    NotFound:
+      description: Book does not exist
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            message: book not found
+
+    InternalError:
+      description: Internal error. Details are logged, never returned to the client.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            message: internal server error

@@ -34,6 +34,8 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("PUT /books/{id}", h.updateBook)
 	mux.HandleFunc("DELETE /books/{id}", h.deleteBook)
 	mux.HandleFunc("GET /health", h.health)
+	mux.HandleFunc("GET /docs", h.docsPage)
+	mux.HandleFunc("GET /openapi.yaml", h.openAPISpec)
 	return Recoverer(Logging(mux))
 }
 

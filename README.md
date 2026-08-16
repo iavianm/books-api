@@ -71,9 +71,13 @@ Every variable is mandatory: the application fails fast at startup if one is mis
 
 ### API
 
+Interactive documentation is served by the application itself at **http://localhost:8080/docs** (Swagger UI over the OpenAPI 3.1 spec, with a working *Try it out*). The raw spec lives in `docs/openapi.yaml` and is exposed at `/openapi.yaml`.
+
 | Method | Path | Description | Success |
 | --- | --- | --- | --- |
 | `GET` | `/health` | health check | `200` |
+| `GET` | `/docs` | Swagger UI | `200` |
+| `GET` | `/openapi.yaml` | OpenAPI 3.1 specification | `200` |
 | `GET` | `/books` | list all books | `200` |
 | `GET` | `/books/{id}` | get a book by id | `200` |
 | `POST` | `/books` | create a book | `201` |
@@ -149,6 +153,7 @@ internal/
   handler/          HTTP: routing, JSON, status codes, middleware
   database/         connection pool and migration runner
 migrations/         SQL migrations, embedded into the binary
+docs/               OpenAPI spec, embedded and served at /docs
 ```
 
 Dependencies point one way: `handler → service → cache → repository → PostgreSQL`. Each layer declares the interface it needs from the one below, so the caching layer was inserted without touching the service or the repository.
@@ -249,9 +254,13 @@ make run
 
 ### API
 
+Интерактивная документация отдаётся самим приложением по адресу **http://localhost:8080/docs** (Swagger UI поверх спецификации OpenAPI 3.1, с работающим *Try it out*). Сама спека лежит в `docs/openapi.yaml` и доступна по `/openapi.yaml`.
+
 | Метод | Путь | Описание | Успех |
 | --- | --- | --- | --- |
 | `GET` | `/health` | проверка живости | `200` |
+| `GET` | `/docs` | Swagger UI | `200` |
+| `GET` | `/openapi.yaml` | спецификация OpenAPI 3.1 | `200` |
 | `GET` | `/books` | список всех книг | `200` |
 | `GET` | `/books/{id}` | книга по id | `200` |
 | `POST` | `/books` | создать книгу | `201` |
@@ -327,6 +336,7 @@ internal/
   handler/          HTTP: роутинг, JSON, коды ответов, middleware
   database/         пул соединений и запуск миграций
 migrations/         SQL-миграции, вшитые в бинарник
+docs/               OpenAPI-спека, вшита в бинарник и отдаётся на /docs
 ```
 
 Зависимости направлены в одну сторону: `handler → service → cache → repository → PostgreSQL`. Каждый слой объявляет интерфейс, который ему нужен от нижележащего, — благодаря этому кэш удалось вставить в цепочку, не меняя ни сервис, ни репозиторий.
